@@ -45,13 +45,23 @@ for source in sources:
 
 search_index = FAISS.from_documents(source_chunks, OpenAIEmbeddings())
 
-chain = load_qa_with_sources_chain(OpenAI(temperature=0))
-print('Ready for requests')
+# Temperature refers to the amount of entropy tolerated from
+# answer generation.  0 = no entropy.  1 = max entropy.
+# a higher temp will result in riskier and more creative
+# responses.
+temp = .75
+
+# k refers to how many results should be returned from
+# vector DB when searching. Also known as a "k-nearest
+# neighbors" (KNN) search
+max_sources = 4
+
+chain = load_qa_with_sources_chain(OpenAI(temperature=temp))
 
 def get_answer(question):
     return chain(
         {
-            "input_documents": search_index.similarity_search(question, k=4),
+            "input_documents": search_index.similarity_search(question, k=max_sources),
             "question": question,
         },
         return_only_outputs=True,
@@ -59,12 +69,4 @@ def get_answer(question):
     
 
 def print_answer(question):
-    print(
-        chain(
-            {
-                "input_documents": search_index.similarity_search(question, k=4),
-                "question": question,
-            },
-            return_only_outputs=True,
-        )["output_text"]
-    )
+    print(get_answer(question))

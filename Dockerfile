@@ -13,6 +13,9 @@ RUN pip install -r requirements.txt
 
 ADD . /app
 
+RUN set -a \
+ && . ./.aptible.env
+
 EXPOSE 8080
 
 CMD ["waitress-serve", "--host", "0.0.0.0", "app:app"]
