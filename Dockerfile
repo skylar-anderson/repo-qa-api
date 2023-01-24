@@ -13,6 +13,6 @@ RUN pip install -r requirements.txt
 
 ADD . /app
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["waitress-serve", "--host", "0.0.0.0", "app:app"]
