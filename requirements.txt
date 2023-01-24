@@ -3,3 +3,4 @@ Flask_Cors==3.0.10
 langchain==0.0.68
 openai==0.25.0
 requests==2.28.1
+faiss-cpu==1.7.3
