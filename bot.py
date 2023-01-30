@@ -1,3 +1,4 @@
+import os
 import openai
 from langchain.llms import OpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
@@ -8,7 +9,9 @@ from langchain.text_splitter import CharacterTextSplitter
 from get_github_docs import get_github_docs 
 from prompt import PROMPT
 
-sources = get_github_docs("primer", "design")
+owner = os.getenv('OWNER', 'primer')
+repo = os.getenv('REPO', 'design')
+sources = get_github_docs(owner, repo)
 
 source_chunks = []
 splitter = CharacterTextSplitter(separator=" ", chunk_size=1024, chunk_overlap=0)

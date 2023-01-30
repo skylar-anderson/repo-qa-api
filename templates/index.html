@@ -1,0 +1,214 @@
+<html>
+  <head>
+    <title>Primer Bot</title>
+    <link rel="icon" href="https://primer.style/css/favicon-32x32.png?v=f3da5bc9ee21801506bcf83c84f79ae4" type="image/png"/>
+    <link href="https://unpkg.com/@primer/css@^20.2.4/dist/primer.css" rel="stylesheet" />
+    <style>
+      form {
+        max-width: 980px;
+        margin: auto;
+      }
+      .spinner-container { height: 30px; width: 30px;}
+      .form-group textarea.form-control {
+        height: 100px;
+        min-height: 100px;
+      }
+
+      @keyframes spinner {
+        to {transform: rotate(360deg);}
+      }
+
+      .spinner:before {
+        content: '';
+        box-sizing: border-box;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin-top: -10px;
+        margin-left: -10px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        border-top-color: #000;
+        animation: spinner .6s linear infinite;
+      }
+    </style>
+  </head>
+  
+
+  <body>
+    <form id="query" class="p-4">
+      <h2 class="mb-3">{{ title }}</h2>
+      <div class="mb-3">
+        <p class="color-fg-muted">
+          Primer Help bot is a Q&A bot powered by GPT, it answers questions about <a href="https://github.com/primer/design">Primer Interface Guidelines</a>.
+        </p>
+      </div>
+      
+      <div class="flash mt-3 flash-error" id="error-container">
+        Flash message goes here.
+      </div>
+      
+      <div class="form-group">
+        <div class="form-group-header">
+          <label for="example-textarea">What do you want to ask Primer Bot?</label>
+        </div>
+        <div class="form-group-body">
+          <textarea placeholder="e.g. Should I use a two column layout inside of a dialog?" autofocus class="form-control" id="question-input"></textarea>
+          <div class="text-sm color-fg-subtle mt-1">
+            Not sure what to ask? <a href="#" id="random-question">Try a random question</a>.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="d-flex flex-row flex-justify-between">
+          <button type="submit" class="btn btn-primary" id="submit">Submit question</button>
+          <div class="spinner-container position-relative" id="spinner">
+            <div class="spinner" />
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="my-4 d-flex flex-column" id="answer-list">
+    </div>
+
+
+  <script>
+    function sourcesFragment(sources) {
+      if (sources && sources.length) {
+        return `
+          <ul class="list-style-none">
+            ${sources.map(source => `
+              <li>
+                <a class="text-sm color-fg-muted" href="${source}">
+                  ${truncateMiddle(source, 32, 16)}
+                </a>
+              </li>
+            `)}
+          </ul>
+        `
+      }
+      return null;
+    }
+
+    function truncateMiddle(str, frontLen, backLen, truncateStr='&hellip;') {
+      if (str === null) {
+        return ''
+      }
+      const strLen = str.length
+      if (frontLen === 0 && backLen === 0 || frontLen >= strLen || backLen >= strLen || (frontLen + backLen) >= strLen) {
+        return str
+      } else if (backLen === 0) {
+        return str.slice(0, frontLen) + truncateStr
+      } else {
+        return str.slice(0, frontLen) + truncateStr + str.slice(strLen - backLen)
+      }
+    }
+
+    function answerTemplate({question, answer, sources}) {
+      var template = document.createElement('template');
+      template.innerHTML = `
+        <div class="border p-4 rounded-2 mb-3">
+          <h4 class="mb-2">
+            ${question}
+          </h4>
+          <p class="color-fg-subtle f5">
+            ${answer}
+          </p>
+          ${sourcesFragment(sources)}
+        </div>
+      `
+      return template.content
+    }
+
+    const randomQuestions = [
+      'is it ok to use a two column layout inside a dialog component?',
+      'what are the dimensions of the different size variants for the dialog component?',
+      'what are some tips for ensuring my design is accessible?',
+      'what are some tips for using progressive disclosure?'
+    ];
+
+    let memory = JSON.parse(window.localStorage.getItem('memory')) || [];
+    
+    const spinner = document.getElementById('spinner');
+    const errorContainer = document.getElementById('error-container');
+    const answerContainer = document.getElementById('answer-list');
+    const questionInput = document.getElementById('question-input');
+    const submit = document.getElementById('submit');
+    const randomButton = document.getElementById('random-question');
+    let randomIndex = 0;
+    
+    function rememberQuestion({ question, answer, sources }) {
+      memory.push({ question, answer, sources })
+      window.localStorage.setItem('memory', JSON.stringify(memory));
+    }
+
+    function setStatus(status) {
+      switch(status) {
+        case 'LOADING':
+          spinner.style.display = 'block'
+          errorContainer.style.display = 'none'
+          submit.disabled = true;
+          break;
+        case 'READY':
+          spinner.style.display = 'none'
+          errorContainer.style.display = 'none'
+          submit.disabled = false;
+          break;
+        case 'ERROR':
+          spinner.style.display = 'none'
+          errorContainer.style.display = 'block'
+          submit.disabled = false;
+        default:
+          throw new Error({ message: `Unknown status: ${status}`})
+      }
+    }
+
+    setStatus('READY');
+
+    function extractAnswerAndSources(answerText) {
+      const [answer, sources] = answerText.split('SOURCES:');
+      return { answer, sources: sources.split(', ') }
+    }
+
+    function query(question) {
+      const URI = `https://app-50883.on-aptible.com/?`
+      const url = `${URI}question=${question}`
+      return fetch(url).then(res => res.text())
+    }
+
+    function submitQuestion(question) {
+      setStatus('LOADING');
+      query(question).then(answerText => {
+        setStatus('READY');
+        const {answer, sources } = extractAnswerAndSources(answerText)
+        const questionResponse = { question, answer, sources }
+        answerContainer.prepend(answerTemplate(questionResponse));
+        rememberQuestion(questionResponse);
+      })
+      .catch((e) => {
+        console.log(e);
+        errorContainer.innerHTML(e.message)
+        setStatus('ERROR');
+      })
+    }
+
+    memory.forEach(questionResponse => {
+      answerContainer.prepend(answerTemplate(questionResponse));
+    });
+
+    randomButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      submitQuestion(randomQuestions[randomIndex++]);
+    });
+
+    document.getElementById('query').addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitQuestion(questionInput.value);
+    });
+  </script>
+  </body>
+</html>
