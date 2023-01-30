@@ -175,7 +175,7 @@
     }
 
     function query(question) {
-      const URI = `https://app-50883.on-aptible.com/?`
+      const URI = `https://app-50883.on-aptible.com/ask?`
       const url = `${URI}question=${question}`
       return fetch(url).then(res => res.text())
     }
