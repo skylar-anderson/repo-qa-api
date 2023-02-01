@@ -1,18 +1,29 @@
-## Getting started
+# Primer Bot
 
-```bash
-$ pip install -r requirements.txt
-$ export OPENAI_API_KEY=sk-...
-$ python3 -c'from langchain_bot_simple import print_answer; print_answer("who is the lead singer of matchbox 20")'
- The lead singer of Matchbox 20 is Rob Thomas.
-SOURCES: https://en.wikipedia.org/wiki/Matchbox_Twenty
-$ dagit -f langchain_bot.py
+Primer Bot is a GPT-powered question-and-answer bot that answers questions about [Primer Interface Guidelines](https://github.com/primer/design). It works by first creating an embeddings index of the markdown contents of the primer/design repository. Then, when a question is submitted, that index is queried for similar text chunks that have a high similarity to the user's question. Those text chunks are used to populate a GPT prompt for answer creation and summarization.
+
+## Running locally
+
+Install requirements:
+```
+pip install -r requirements.tx
 ```
 
-
-```python
-print_answer("What are the guidelines for using labels on forms?")
-print_answer("What component should I use to show a users profile?")
-print_answer("What are the best practices for progressive disclosure?")
-print_answer("What are the dimensions each of the size variants of the Dialog component?")
+Set your OpenAI API Key:
 ```
+export OPEN_API_KEY=sk-.....
+```
+
+Run the application server:
+```
+waitress-serve --host 0.0.0.0 app:app
+```
+
+## Deployment
+Deploy this on any Docker platform, such as [Aptible](https://www.aptible.com/).
+
+## OpenAI API Key
+The bot requires access to OpenAI APIs for generating text embeddings and answer summarization. After you [generate an OpenAI API Key](https://beta.openai.com/account/api-keys), configure this app to use it by storing the key in the `OPEN_API_KEY` environment var.
+
+## Indexing a different repository
+You can optionally target a different public repository by providing new values for `OWNER` and `REPO` environment variables.

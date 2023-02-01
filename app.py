@@ -7,7 +7,7 @@ CORS(app)
 
 @app.route('/', methods=['GET'])
 def index():
-  return render_template('index.html', title='Primer Bot')
+  return render_template('index.html')
 
 @app.route('/ask', methods=['GET'])
 def ask():
